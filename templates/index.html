@@ -41,11 +41,11 @@
 
     <!-- Navigation -->
     <nav class="box d-flex justify-content-center gap-4">
-        <a href="/login" class="btn btn-outline-light" target="abb">Login</a>
-        <a href="/registre" class="btn btn-outline-light" target="abb">Register</a>
+        <a href="#" onclick="document.getElementById('iframeContent').src='/login'; return false;" class="btn btn-outline-light">Login</a>
+        <a href="#" onclick="document.getElementById('iframeContent').src='/registre'; return false;" class="btn btn-outline-light">Register</a>
     </nav>
 
-    <!-- Main Section -->
+    <!-- Main Section with iframe -->
     <section class="box">
         <h3>Welcome</h3>
         <p>
@@ -53,8 +53,9 @@
             designed to demonstrate Web Application Firewall (WAF) protection
             against common web attacks.
         </p>
-        <div >
-            <iframe name="abb" src="/login" style="width:100%; height:600px; border:none; background:transparent;"></iframe></iframe></div>
+        <div>
+            <iframe id="iframeContent" src="/login" style="width:100%; height:600px; border:none; background:transparent;"></iframe>
+        </div>
     </section>
 
 </div>
