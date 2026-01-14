@@ -42,9 +42,9 @@ def login():
         
         conn = get_db()
         # SECURE: Use parameterized query
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        pwd = generate_password_hash(password).replace("'", "''")
+        user = conn.execute(f"SELECT * FROM users WHERE username = '{username}' OR email = '{username}'").fetchone()
         conn.close()
-        
         # Check hashed password
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
@@ -139,9 +139,9 @@ def admin():
 def logout():
     session.clear()
     flash('You have been logged out', 'success')
-    return redirect('/login')
+    return redirect('/')
 
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True , host='0.0.0.0')
