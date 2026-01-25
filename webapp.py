@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from markupsafe import escape
 import sqlite3
 import os
 
@@ -41,10 +42,10 @@ def login():
             return render_template('login.html')
         
         conn = get_db()
-        # SECURE: Use parameterized query
-        pwd = generate_password_hash(password).replace("'", "''")
+        # VULNERABLE: SQL Injection in username/email check
         user = conn.execute(f"SELECT * FROM users WHERE username = '{username}' OR email = '{username}'").fetchone()
         conn.close()
+        
         # Check hashed password
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
@@ -115,13 +116,38 @@ def registre():
     
     return render_template('registre.html')
 
-@app.route('/dashboard')
+@app.route('/preview', methods=['POST'])
+def preview():
+    if 'user_id' not in session:
+        return redirect('/login')
+    
+    text_input = request.form.get('textInput', '')
+    font_select = request.form.get('fontSelect', 'arial')
+    
+    # Text is passed back to be rendered with innerHTML (VULNERABLE)
+    return render_template('dashboard.html',
+                         username=session['username'],
+                         preview_text=text_input,
+                         selected_font=font_select)
+
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'user_id' not in session:
         return redirect('/login')
     if session.get('is_admin'):
         return redirect('/admin')
-    return render_template('dashboard.html', username=session['username'])
+    
+    preview_text = ''
+    selected_font = 'arial'
+    
+    if request.method == 'POST':
+        preview_text = request.form.get('textInput', '')
+        selected_font = request.form.get('fontSelect', 'arial')
+    
+    return render_template('dashboard.html', 
+                         username=session['username'],
+                         preview_text=preview_text,
+                         selected_font=selected_font)
 
 @app.route('/admin')
 def admin():
@@ -144,4 +170,4 @@ def logout():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True , host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')

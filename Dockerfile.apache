@@ -1,0 +1,35 @@
+FROM ubuntu:22.04
+
+# Install Apache + ModSecurity + SSL + Git
+RUN apt-get update && \
+    apt-get install -y apache2 libapache2-mod-security2 git openssl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Enable required modules
+RUN a2enmod ssl proxy proxy_http rewrite headers security2
+
+# Generate self-signed SSL
+RUN mkdir -p /etc/ssl/certs /etc/ssl/private && \
+    openssl req -x509 -nodes -days 365 \
+        -newkey rsa:2048 \
+        -keyout /etc/ssl/private/key.pem \
+        -out /etc/ssl/certs/cert.pem \
+        -subj "/C=TN/ST=Tunis/L=Tunis/O=Stage/CN=localhost"
+
+# Clone a fresh CRS
+# Remove any existing CRS folder, then clone fresh one
+RUN rm -rf /usr/share/modsecurity-crs && \
+    git clone --depth 1 --branch v3.3.2 https://github.com/coreruleset/coreruleset.git /usr/share/modsecurity-crs
+
+# Copy configuration files
+COPY modsecurity.conf /etc/modsecurity/modsecurity.conf
+COPY apache-vhost.conf /etc/apache2/sites-available/default-ssl.conf
+
+# Enable SSL site and disable default
+RUN a2ensite default-ssl && a2dissite 000-default
+
+# Expose ports
+EXPOSE 80 443
+
+# Start Apache in foreground
+CMD ["apache2ctl", "-D", "FOREGROUND"]
